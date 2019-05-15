@@ -14,7 +14,7 @@
 `include "io_def.vh"
 
 module mem_example(
-    input clk_100mhz,
+    input clk_mem,
     input rst_n,
 
     inout[15:0] ddr2_dq,
@@ -57,7 +57,7 @@ module mem_example(
     reg[7:0] mem_wdf_mask;
     wire mem_wdf_rdy;
 
-    migo mig1 (
+    mig mig1 (
         .ddr2_addr(ddr2_addr),
         .ddr2_ba(ddr2_ba),
         .ddr2_cas_n(ddr2_cas_n),
@@ -97,7 +97,7 @@ module mem_example(
 
         .app_wdf_mask(mem_wdf_mask),
 
-        .sys_clk_i(clk_100mhz),
+        .sys_clk_i(clk_mem),
         .sys_rst(rst_n)
         );
 
