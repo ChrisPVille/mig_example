@@ -4,13 +4,16 @@
 //in 64-bit chunks. This can be done internal to the module so we still present
 //128-bit ports to the rest of the design.
 //
+//As the 128-bit mode is a bit of overkill for this example, the second data write
+//is always masked off and isn't available external to the module.
+//
 //A happy side-effect of the 2:1 mode (vs 4:1 mode) is that ui_clk runs at
 //double the speed, decreasing the delay of the clock domain crossing from the
 //CPU into the ui_*/app_* memory controller domain.
 
 `include "io_def.vh"
 
-module physical_ram(
+module mem_example(
     input clk_100mhz,
     input rst_n,
 
@@ -32,8 +35,8 @@ module physical_ram(
     input cpu_clk,
     input[27:0] addr,
     input[1:0] width,
-    input[127:0] data_in,
-    output reg[127:0] data_out,
+    input[63:0] data_in,
+    output reg[63:0] data_out,
     input rstrobe,
     input wstrobe,
     output transaction_complete,
@@ -222,7 +225,6 @@ module physical_ram(
 
             STATE_WRITEDATA_H: begin
                 if(mem_wdf_rdy) begin //Wait for Write Data queue to have space
-                    //TODO Temporary masking until we have full 128-bits from cache eviction
                     if(~addr[0]) case(width)
                         `RAM_WIDTH64: begin
                             mem_wdf_mask <= 8'h00;
@@ -310,23 +312,4 @@ module physical_ram(
             endcase
         end
     end
-
-//    ila_0  ila(.clk(ui_clk),
-//               .probe0(cpu_clk),
-//               .probe1(mem_rdy),
-//               .probe2(mem_en),
-//               .probe3(addr),
-//               .probe4(rst_n),
-//               .probe5(mem_cmd),
-//               .probe6(1'b0),
-//               .probe7(wstrobe_sync),
-//               .probe8(rstrobe_sync),
-//               .probe9(mem_rd_data_end),
-//               .probe10(mem_rd_data_valid),
-//               .probe11(mem_wdf_rdy),
-//               .probe12(mem_wdf_wren),
-//               .probe13(mem_wdf_end),
-//               .probe14(complete),
-//               .probe15(state));
-
 endmodule

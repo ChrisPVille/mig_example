@@ -1,14 +1,6 @@
-module raisin64_nexys4_ddr_top(
+module mig_example_top(
     input CLK100MHZ,
     input CPU_RESETN,
-    input[15:0] SW,
-    output[15:0] LED,
-    inout[8:1] JB,
-    output[3:0] VGA_R,
-    output[3:0] VGA_G,
-    output[3:0] VGA_B,
-    output VGA_HS,
-    output VGA_VS,
 
     //RAM Interface
     inout[15:0] ddr2_dq,
@@ -27,58 +19,38 @@ module raisin64_nexys4_ddr_top(
     output ddr2_odt
     );
 
-    localparam IMEM_INIT = "/home/christopher/git/raisin64-nexys4ddr/software/imem.hex";
-    localparam DMEM_INIT = "/home/christopher/git/raisin64-nexys4ddr/software/dmem.hex";
-
     //////////  Clock Generation  //////////
-    wire clk_cpu, clk_vga, clk_in;
-    wire dig_pll_locked, vid_pll_locked;
+    wire clk_cpu, clk_in;
+    wire dig_pll_locked;
 
     IBUFG clk_in_buf (.I(CLK100MHZ), .O(clk_in));
 
-    clk_synth dig_pll(
+    clk_synth cpu_pll(
         .locked(dig_pll_locked),
         .clk_in(clk_in),
         .clk_cpu(clk_cpu)
-        );
-
-    clk_vga vid_pll(
-        .locked(vid_pll_locked),
-        .clk_in(clk_in),
-        .clk_vga(clk_vga)
         );
 
     //////////  Reset Sync/Stretch  //////////
     reg[31:0] rst_stretch = 32'hFFFFFFFF;
     wire reset_req_n, rst_n;
 
-    assign reset_req_n = CPU_RESETN & dig_pll_locked & vid_pll_locked;
+    assign reset_req_n = CPU_RESETN & dig_pll_locked;
 
     always @(posedge clk_cpu) rst_stretch = {reset_req_n,rst_stretch[31:1]};
     assign rst_n = reset_req_n & &rst_stretch;
 
-    //////////  CPU  //////////
-    wire[63:0] mem_from_cpu;
-    wire[63:0] mem_to_cpu;
-    wire[63:0] mem_addr;
-    wire mem_addr_valid;
-    wire mem_from_cpu_write;
-    wire mem_to_cpu_ready;
-
-    raisin64 #(
-        .IMEM_INIT(IMEM_INIT),
-        .DMEM_INIT(DMEM_INIT)
-        ) cpu (
-        .clk(clk_cpu),
+    //////////  DUT  //////////
+    wire[27:0] mem_addr;
+    wire[1:0] mem_transaction_width;
+    wire[63:0] mem_d_to_ram;
+    wire[63:0] mem_d_from_ram;
+    wire mem_wstrobe, mem_rstrobe;
+    wire mem_transaction_complete;
+    
+    mem_example mem_ex(
         .clk_100mhz(clk_in),
         .rst_n(rst_n),
-
-        .mem_din(mem_to_cpu),
-        .mem_dout(mem_from_cpu),
-        .mem_addr(mem_addr),
-        .mem_addr_valid(mem_addr_valid),
-        .mem_dout_write(mem_from_cpu_write),
-        .mem_din_ready(mem_to_cpu_ready),
 
         .ddr2_addr(ddr2_addr),
         .ddr2_ba(ddr2_ba),
@@ -95,11 +67,15 @@ module raisin64_nexys4_ddr_top(
         .ddr2_dm(ddr2_dm),
         .ddr2_odt(ddr2_odt),
 
-        .jtag_tck(JB[4]),
-        .jtag_tms(JB[1]),
-        .jtag_tdi(JB[2]),
-        .jtag_trst(JB[7]),
-        .jtag_tdo(JB[3])
+        .cpu_clk(clk_cpu),
+        .addr(mem_addr),
+        .width(mem_transaction_width),
+        .data_in(mem_d_to_ram),
+        .data_out(mem_d_from_ram),
+        .rstrobe(mem_rstrobe),
+        .wstrobe(mem_wstrobe),
+        .transaction_complete(mem_transaction_complete),
+        .ready(mem_transaction_complete)
         );
 
     //////////  IO  //////////
