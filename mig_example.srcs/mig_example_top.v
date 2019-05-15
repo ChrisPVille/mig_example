@@ -22,28 +22,21 @@ module mig_example_top(
     );
 
     //////////  Clock Generation  //////////
-    wire clk_cpu, clk_mem, clk_in;
-    wire dig_pll_locked, mem_pll_locked;
+    wire clk_cpu, clk_mem;
+    wire pll_locked;
 
-    IBUFG clk_in_buf (.I(CLK100MHZ), .O(clk_in));
-
-    clk_synth cpu_pll(
-        .locked(dig_pll_locked),
-        .clk_in(clk_in),
-        .clk_cpu(clk_cpu)
-        );
-        
-    clk_mem mem_pll(
-        .locked(mem_pll_locked),
-        .clk_in(clk_in),
-        .clk_mem(clk_mem) //200MHz Memory Reference Clock
+    pll pll1(
+        .locked(pll_locked),
+        .clk_in(CLK100MHZ),
+        .clk_mem(clk_mem), //200MHz Memory Reference Clock
+        .clk_cpu(clk_cpu)  //Clock used for traffic generator
         );
 
     //////////  Reset Sync/Stretch  //////////
     reg[31:0] rst_stretch = 32'hFFFFFFFF;
     wire reset_req_n, rst_n;
 
-    assign reset_req_n = CPU_RESETN & mem_pll_locked & dig_pll_locked;
+    assign reset_req_n = CPU_RESETN & pll_locked;
 
     always @(posedge clk_cpu) rst_stretch = {reset_req_n,rst_stretch[31:1]};
     assign rst_n = reset_req_n & &rst_stretch;

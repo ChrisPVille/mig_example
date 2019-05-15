@@ -1,7 +1,7 @@
 // Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2018.3.1 (lin64) Build 2489853 Tue Mar 26 04:18:30 MDT 2019
-// Date        : Tue May 14 21:35:23 2019
+// Date        : Tue May 14 22:15:06 2019
 // Host        : titan running 64-bit Ubuntu 18.10
 // Command     : write_verilog -force -mode funcsim
 //               /home/christopher/git/mig_example/mig_example.srcs/sources_1/ip/mig/mig_sim_netlist.v

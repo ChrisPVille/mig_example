@@ -1,4 +1,4 @@
-SET_FLAG MODE INTERACTIVE
+SET_FLAG MODE BATCH
 SET_FLAG STANDALONE_MODE TRUE
 SET_PREFERENCE ipi_mode no
 SET_PREFERENCE is_ip_locked false
@@ -9,13 +9,13 @@ SET_PREFERENCE package csg324
 SET_PREFERENCE verilogsim true
 SET_PREFERENCE vhdlsim false
 SET_PREFERENCE designentry Verilog
-SET_PREFERENCE outputdirectory /home/christopher/.Xil/Vivado-13589-titan/coregen/mig_7series_0/_tmp/
-SET_PREFERENCE subworkingdirectory /home/christopher/.Xil/Vivado-13589-titan/coregen/mig_7series_0/_tmp/
+SET_PREFERENCE outputdirectory /home/christopher/git/mig_example/mig_example.srcs/sources_1/ip/mig/_tmp/
+SET_PREFERENCE subworkingdirectory /home/christopher/git/mig_example/mig_example.srcs/sources_1/ip/mig/_tmp/
 SET_PREFERENCE flowvendor Other
 SET_PREFERENCE tool vivado
-SET_PARAMETER component_name mig_7series_0
-SET_PREFERENCE compnamestatus 1
-SET_PARAMETER component_name mig_7series_0
+SET_PREFERENCE compnamestatus 0
+SET_PARAMETER component_name mig
+SET_PARAMETER xml_input_file /home/christopher/git/mig_example/mig_example.srcs/sources_1/ip/mig/mig_a.prj
 SET_PARAMETER data_dir_path /home/christopher/storage/Vivado/2018.3/data/ip/xilinx/mig_7series_v4_2
 SET_CORE_NAME Memory Interface Generator (MIG 7 Series)
 SET_CORE_VERSION 4.2
