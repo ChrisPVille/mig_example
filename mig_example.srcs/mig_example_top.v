@@ -105,7 +105,7 @@ module mig_example_top(
     localparam TGEN_READ   = 3'h3;
     localparam TGEN_RWAIT  = 3'h4;
     
-    reg[1:0] tgen_state;
+    reg[2:0] tgen_state;
     reg dequ; //Data read from RAM equals data written
         
     always @(posedge clk_cpu or negedge rst_n) begin
@@ -115,7 +115,7 @@ module mig_example_top(
             mem_wstrobe = 1'b0;
             mem_addr = 64'h0;
             mem_d_to_ram = 28'h0;
-            mem_transaction_width <= 2'h0;
+            mem_transaction_width <= 3'h0;
             dequ <= 1'b0;
         end else begin
             case(tgen_state)
