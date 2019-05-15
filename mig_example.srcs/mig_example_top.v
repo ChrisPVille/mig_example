@@ -103,11 +103,11 @@ module mig_example_top(
         
     always @(posedge clk_cpu or negedge rst_n) begin
         if(~rst_n) begin
-            tgen_state = TGEN_GEN_AD;
-            mem_rstrobe = 1'b0;
-            mem_wstrobe = 1'b0;
-            mem_addr = 64'h0;
-            mem_d_to_ram = 28'h0;
+            tgen_state <= TGEN_GEN_AD;
+            mem_rstrobe <= 1'b0;
+            mem_wstrobe <= 1'b0;
+            mem_addr <= 64'h0;
+            mem_d_to_ram <= 28'h0;
             mem_transaction_width <= 3'h0;
             dequ <= 1'b0;
         end else begin
