@@ -1,6 +1,8 @@
 module mig_example_top(
     input CLK100MHZ,
     input CPU_RESETN,
+    
+    output[15:0] LED,
 
     //RAM Interface
     inout[15:0] ddr2_dq,
@@ -41,12 +43,14 @@ module mig_example_top(
     assign rst_n = reset_req_n & &rst_stretch;
 
     //////////  DUT  //////////
-    wire[27:0] mem_addr;
-    wire[1:0] mem_transaction_width;
-    wire[63:0] mem_d_to_ram;
     wire[63:0] mem_d_from_ram;
-    wire mem_wstrobe, mem_rstrobe;
     wire mem_transaction_complete;
+    wire mem_ready;
+    
+    reg[27:0] mem_addr;
+    reg[63:0] mem_d_to_ram;
+    reg[1:0] mem_transaction_width;
+    reg mem_wstrobe, mem_rstrobe;
     
     mem_example mem_ex(
         .clk_100mhz(clk_in),
@@ -75,68 +79,78 @@ module mig_example_top(
         .rstrobe(mem_rstrobe),
         .wstrobe(mem_wstrobe),
         .transaction_complete(mem_transaction_complete),
-        .ready(mem_transaction_complete)
+        .ready(mem_ready)
         );
 
-    //////////  IO  //////////
-    wire led_en, sw_en, vga_en;
-    memory_map memory_map_external(
-        .addr(mem_addr_valid ? mem_addr : 64'h0),
-        .led(led_en),
-        .sw(sw_en),
-        .vga(vga_en)
-        );
+    //////////  Traffic Generator  //////////
+    reg[31:0] lfsr;
 
-    //As noted in raisin64.v because our IO architecture will need to be completely
-    //re-written with the introduction of caches, we only support 64-bit aligned
-    //access to IO space for now.
-    reg[15:0] led_reg;
     always @(posedge clk_cpu or negedge rst_n) begin
-        if(~rst_n) led_reg <= 16'h0;
-        else if(led_en & mem_from_cpu_write) led_reg <= mem_from_cpu;
-    end
-
-    assign LED[15:0] = led_reg;
-
-    //SW uses a small synchronizer
-    reg[15:0] sw_pre0, sw_pre1;
-    always @(posedge clk_cpu or negedge rst_n) begin
-        if(~rst_n) begin
-            sw_pre0 <= 16'h0;
-            sw_pre1 <= 16'h0;
-        end else begin
-            sw_pre0 <= sw_pre1;
-            sw_pre1 <= SW;
+        if(~rst_n) lfsr <= 32'h0;
+        else begin
+            lfsr[31:1] <= lfsr[30:0];
+            lfsr[0] <= ~^{lfsr[31], lfsr[21], lfsr[1:0]};
         end
     end
 
-    //VGA System
-    wire[15:0] vga_dout;
-    //Again, for now we take the lower bits from a fully-aligned access. This
-    //will be trivial to change in the future.
-    vgaCharGen #(
-        .SINGLE_CYCLE_DESIGN(0) //Allow the registering of cpu_data outputs
-        ) vga_cg(
-        .pixel_clk(clk_vga),
-        .rst_p(~rst_n),
-        .pixel_clkEn(1'b1),
-        .cpu_clk(clk_cpu),
-        .cpu_addr(mem_addr[18:3]),
-        .cpu_oe(vga_en),
-        .cpu_we(vga_en & mem_from_cpu_write),
-        .cpu_dataIn(mem_from_cpu[15:0]),
-        .cpu_dataOut(vga_dout),
-        .VGA_R(VGA_R),
-        .VGA_G(VGA_G),
-        .VGA_B(VGA_B),
-        .VGA_HS(VGA_HS),
-        .VGA_VS(VGA_VS)
-        );
-
-    //Data selection
-    assign mem_to_cpu_ready = mem_addr_valid;
-    assign mem_to_cpu = sw_en ? sw_pre0 :
-                        vga_en ? vga_dout :
-                        64'h0;
+    localparam TGEN_GEN_AD = 3'h0; 
+    localparam TGEN_WRITE  = 3'h1;
+    localparam TGEN_WWAIT  = 3'h2;
+    localparam TGEN_READ   = 3'h3;
+    localparam TGEN_RWAIT  = 3'h4;
+    
+    reg[1:0] tgen_state;
+    reg dequ; //Data read from RAM equals data written
+        
+    always @(posedge clk_cpu or negedge rst_n) begin
+        if(~rst_n) begin
+            tgen_state = TGEN_GEN_AD;
+            mem_rstrobe = 1'b0;
+            mem_wstrobe = 1'b0;
+            mem_addr = 64'h0;
+            mem_d_to_ram = 28'h0;
+            mem_transaction_width <= 2'h0;
+            dequ <= 1'b0;
+        end else begin
+            case(tgen_state)
+            TGEN_GEN_AD: begin
+                    mem_addr <= lfsr[27:0];
+                    mem_d_to_ram <= {~lfsr,lfsr};
+                    tgen_state <= TGEN_WRITE;
+                end
+            TGEN_WRITE: begin
+                    if(mem_ready) begin
+                        mem_wstrobe <= 1;
+                        //Write the entire 64-bit word
+                        mem_transaction_width <= `RAM_WIDTH64;
+                        tgen_state <= TGEN_WWAIT;
+                    end
+                end
+            TGEN_WWAIT: begin
+                    mem_wstrobe <= 0;
+                    if(mem_transaction_complete) begin
+                        tgen_state <= TGEN_READ;
+                    end
+                end
+            TGEN_READ: begin
+                    if(mem_ready) begin
+                        mem_rstrobe <= 1;
+                        //Load only the single byte at that address
+                        mem_transaction_width <= `RAM_WIDTH8;
+                        tgen_state <= TGEN_RWAIT;
+                    end
+                end
+            TGEN_WRITE: begin
+                    mem_rstrobe <= 0;
+                    if(mem_transaction_complete) begin
+                        if(mem_d_from_ram == mem_d_to_ram) dequ <= 1;
+                        else dequ <= 0;
+                    end
+                end
+            endcase
+        end
+    end
+    
+    assign LED[0] = dequ;
 
 endmodule

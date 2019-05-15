@@ -4,8 +4,8 @@
 //in 64-bit chunks. This can be done internal to the module so we still present
 //128-bit ports to the rest of the design.
 //
-//As the 128-bit mode is a bit of overkill for this example, the second data write
-//is always masked off and isn't available external to the module.
+//As the 128-bit mode is a bit of overkill for this example, the upper 64-bits are
+//always masked off and aren't available external to the module.
 //
 //A happy side-effect of the 2:1 mode (vs 4:1 mode) is that ui_clk runs at
 //double the speed, decreasing the delay of the clock domain crossing from the
