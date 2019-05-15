@@ -142,7 +142,7 @@ module mig_example_top(
                     if(mem_ready) begin
                         mem_rstrobe <= 1;
                         //Load only the single byte at that address
-                        mem_transaction_width <= `RAM_WIDTH8;
+                        mem_transaction_width <= `RAM_WIDTH16;
                         tgen_state <= TGEN_RWAIT;
                     end
                 end
@@ -150,7 +150,7 @@ module mig_example_top(
                     mem_rstrobe <= 0;
                     if(mem_transaction_complete) begin
                         tgen_state <= TGEN_GEN_AD; 
-                        if(mem_d_from_ram == mem_d_to_ram) dequ <= 1;
+                        if(mem_d_from_ram[63:48] == mem_d_to_ram[63:48]) dequ <= 1;
                         else dequ <= 0;
                     end
                 end

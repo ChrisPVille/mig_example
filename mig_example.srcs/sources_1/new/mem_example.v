@@ -158,11 +158,10 @@ module mem_example(
     //only authoritative trigger for registering read bytes.
     always @(posedge ui_clk) begin
         if(ui_clk_sync_rst) begin
-            data_out <= 127'h0;
+            data_out <= 64'h0;
         end else begin
             if (state == STATE_READ && mem_rd_data_valid || //Data is available normally
                 state == STATE_PREREAD && mem_rdy && mem_rd_data_valid) begin //Data happens to be available immediately
-                data_out[127:64] <= 64'h0;
                 if(~addr[0]) begin
                     if(~mem_rd_data_end) case(width)
                         `RAM_WIDTH64: data_out[63:0] <= {mem_rd_data[7:0],mem_rd_data[15:8],
