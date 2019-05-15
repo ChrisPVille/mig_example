@@ -146,9 +146,10 @@ module mig_example_top(
                         tgen_state <= TGEN_RWAIT;
                     end
                 end
-            TGEN_WRITE: begin
+            TGEN_RWAIT: begin
                     mem_rstrobe <= 0;
                     if(mem_transaction_complete) begin
+                        tgen_state <= TGEN_GEN_AD; 
                         if(mem_d_from_ram == mem_d_to_ram) dequ <= 1;
                         else dequ <= 0;
                     end
